@@ -11,6 +11,49 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /game:
+    get:
+      operationId: getGame
+      summary: Public leaderboard and community totals
+      responses:
+        "200":
+          description: Game overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+  /session:
+    post:
+      operationId: openSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramIdentity"
+      responses:
+        "200":
+          description: Verified player
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+  /clicks:
+    post:
+      operationId: addClicks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClickInput"
+      responses:
+        "200":
+          description: Saved player score
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
   /healthz:
     get:
       operationId: healthCheck
@@ -26,6 +69,38 @@ paths:
                 $ref: "#/components/schemas/HealthStatus"
 components:
   schemas:
+    TelegramIdentity:
+      type: object
+      required: [initData]
+      properties:
+        initData: {type: string}
+    ClickInput:
+      type: object
+      required: [initData, count, requestId]
+      properties:
+        initData: {type: string}
+        count: {type: integer, minimum: 1, maximum: 50}
+        requestId: {type: string, format: uuid}
+    Player:
+      type: object
+      required: [id, nickname, clicks, rank]
+      properties:
+        id: {type: string}
+        nickname: {type: string}
+        clicks: {type: integer}
+        rank: {type: integer}
+    Game:
+      type: object
+      required: [leaderboard, totalClicks, totalPlayers, botUsername, pollingReady]
+      properties:
+        leaderboard:
+          type: array
+          items:
+            $ref: "#/components/schemas/Player"
+        totalClicks: {type: integer}
+        totalPlayers: {type: integer}
+        botUsername: {type: ["string", "null"]}
+        pollingReady: {type: boolean}
     HealthStatus:
       type: object
       properties:

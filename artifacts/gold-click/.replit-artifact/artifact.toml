@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Gold Click"
+description = "A Telegram click-counter game with a golden tap target and a live leaderboard of Telegram usernames."
+version = "1.0.0"
+id = "artifacts/gold-click"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19451
+
+[services.development]
+run = "pnpm --filter @workspace/gold-click run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gold-click", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/gold-click/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19451"
+BASE_PATH = "/"

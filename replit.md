@@ -1,45 +1,46 @@
-# [Project name]
+# Gold Click
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A Telegram Mini App with a gold click button and a persistent Telegram-nickname leaderboard.
 
-## Run & Operate
+## Run
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- API: `pnpm --filter @workspace/api-server run dev`
+- Web: `pnpm --filter @workspace/gold-click run dev`
+- Python dependencies: `uv sync --frozen`
+- API uses aiohttp and pyTelegramBotAPI's AsyncTeleBot, not Flask or the unused Express scaffold.
+- Both aiohttp and Telegram long polling run in the same asyncio event loop.
 
-## Stack
+## Configuration
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- `TELEGRAM_BOT_TOKEN`: secret from BotFather.
+- `DATABASE_URL`: managed PostgreSQL connection.
+- `WEB_URL`: absolute HTTPS address for the web interface. Set this explicitly to the published address for production.
+- `LOG_LEVEL`: optional, defaults to INFO.
+- `PORT`: supplied by the service workflow.
+- During development only, the bot uses the development domain when WEB_URL is unset.
+- Production intentionally disables polling when WEB_URL is unset rather than handing out a development link.
 
-## Where things live
+## Source map
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/api-server/python/`: aiohttp API, Telegram launch-data verification, database operations, and Telebot polling.
+- `artifacts/gold-click/`: React web interface.
+- `lib/api-spec/openapi.yaml`: API contract; regenerate with `pnpm --filter @workspace/api-spec run codegen`.
+- `lib/db/src/schema/clicks.ts`: PostgreSQL schema mirrored for the managed publish schema flow.
+- API paths: `/api/healthz`, `/api/game`, `/api/session`, `/api/clicks`.
 
-## Architecture decisions
+## Product rules and operating constraints
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Only verified Telegram launch data can submit ranked clicks; browser practice is local and unranked.
+- Show Telegram @username; if the user has no username, show their Telegram first name.
+- `/start`, `/play`, and `/help` send an inline launch button using WebAppInfo.
+- One polling process per bot token. Stop development polling before running a published instance with that same token, or use separate development/production bot tokens.
+- Polling needs a continuously running server; do not use a static-only hosting configuration.
+- Launch data expires after 24 hours; reopening the Mini App creates fresh launch data.
+- Never log bot tokens, Telegram initData, or raw third-party exception strings that may contain credentials.
+- No fake players are seeded into the real leaderboard.
 
-## Product
+## Validation
 
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- `pnpm run typecheck` for TypeScript.
+- `uv run python -m compileall -q artifacts/api-server/python` for Python syntax.
+- The first build checked the browser practice screen and API health; a signed-in Telegram UI session was not verified.
